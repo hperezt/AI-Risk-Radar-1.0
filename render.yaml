@@ -4,7 +4,7 @@ services:
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt   # 👈 subir un nivel
-    startCommand: uvicorn main:app --host=0.0.0.0 --port=10000
+    startCommand: uvicorn app.main:app --host=0.0.0.0 --port=10000
     envVars:
       - key: OPENAI_API_KEY
         sync: false
@@ -18,7 +18,7 @@ services:
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt   # 👈 subir un nivel
-    startCommand: streamlit run ui/app.py --server.port 10001 --server.address=0.0.0.0
+    startCommand: streamlit run ui/streamlit_app.py --server.port 10001 --server.address=0.0.0.0
     envVars:
     - key: API_URL
       value: https://ai-risk-radar-api.onrender.com/analyze
