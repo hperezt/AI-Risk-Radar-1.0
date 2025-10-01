@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: ai-risk-api
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host=0.0.0.0 --port=10000
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      #- key: MODEL_NAME
+      # value: gpt-4o
+    autoDeploy: true
+    rootDir: app   # 👈 Importante: solo backend aquí
+
+  - type: web
+    name: ai-risk-ui
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run ui/app.py --server.port 10001 --server.address=0.0.0.0
+    envVars:
+    - key: API_URL
+      value: https://ai-risk-radar-api.onrender.com/analyze
+    autoDeploy: true
+    rootDir: ui   # 👈 Importante: solo frontend aquí
