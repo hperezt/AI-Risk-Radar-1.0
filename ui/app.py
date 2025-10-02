@@ -1,4 +1,5 @@
 #streamlit App productive
+import os
 import streamlit as st
 import requests
 import pandas as pd
@@ -9,16 +10,21 @@ LANGUAGES = {"Español": "es", "English": "en", "Deutsch": "de"}
 lang = st.sidebar.selectbox("🌐 Idioma / Language / Sprache", list(LANGUAGES.keys()))
 lang_code = LANGUAGES[lang]
 
-API_URL = "https://ai-risk-radar-api.onrender.com"
+# 🔗 Configuración de API (usa variable de entorno en Render o local por defecto)
+BASE_URL = os.environ.get("API_URL", "http://127.0.0.1:8000")
+API_URL = f"{BASE_URL}/analyze"
+
 
 # ⚙️ Config app
 st.set_page_config(page_title="AI Risk Radar", layout="centered")
 st.title(t["app_title"][lang_code])
 st.markdown(t["file_instruction"][lang_code])
 
+# 📂 Carga de archivos y contexto
 uploaded_file = st.file_uploader(t["file_label"][lang_code], type=["txt", "pdf", "docx"])
 context = st.text_input(t["context_label"][lang_code], placeholder=t["context_placeholder"][lang_code])
 
+# ▶️ Botón de análisis
 if st.button(t["analyze_button"][lang_code]):
     if not uploaded_file:
         st.warning(t["no_file_warning"][lang_code])
