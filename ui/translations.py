@@ -95,9 +95,14 @@ translations = {
     },
     "error": {
         "default": {
-            "es": "❌ Ocurrió un error",
-            "en": "❌ An error occurred",
-            "de": "❌ Ein Fehler ist aufgetreten"
+            "es": "Error inesperado",
+            "en": "Unexpected error",
+            "de": "Unerwarteter Fehler"
+        },
+        "network": {
+            "es": "Error de red",
+            "en": "Network error",
+            "de": "Netzwerkfehler"
         }
     }
 }
