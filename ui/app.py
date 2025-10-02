@@ -11,7 +11,7 @@ lang = st.sidebar.selectbox("🌐 Idioma / Language / Sprache", list(LANGUAGES.k
 lang_code = LANGUAGES[lang]
 
 # 🔗 Configuración de API (usa variable de entorno en Render o local por defecto)
-BASE_URL = os.environ.get("API_URL", "http://127.0.0.1:8000")
+BASE_URL = os.environ.get("API_URL", "https://ai-risk-radar-1-0-bwdu.onrender.com")
 API_URL = f"{BASE_URL}/analyze"
 
 
