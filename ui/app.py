@@ -81,7 +81,7 @@ if not st.session_state["authorized"]:
                     sheet.append_row([email, reason])
                 st.session_state["authorized"] = True
                 st.success("✅ Acceso concedido. Ahora puedes usar la demo.")
-                st.experimental_rerun()
+                st.rerun()  # 👈 funciona en Streamlit 1.29+
             except Exception as e:
                 st.error(f"⚠️ Error al guardar en Google Sheets: {e}")
 
