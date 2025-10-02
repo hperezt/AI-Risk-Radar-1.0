@@ -3,7 +3,7 @@ services:
     name: ai-risk-api
     env: python
     plan: free
-    rootDir: app                 # 👈 raíz del repo
+    rootDir: app
     buildCommand: pip install -r ../requirements.txt
     startCommand: uvicorn main:app --host=0.0.0.0 --port=10000
     envVars:
