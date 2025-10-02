@@ -4,12 +4,12 @@ import traceback
 from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.responses import JSONResponse
 
-from app.parsers import (
+from . import parsers import (
     extract_text_from_pdf,
     extract_text_from_docx,
     extract_text_from_txt,
 )
-from app.risk_engine import generate_risks
+from . import risk_engine import generate_risks
 
 logger = logging.getLogger("uvicorn.error")
 app = FastAPI(debug=True)
