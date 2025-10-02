@@ -12,3 +12,5 @@ httpx==0.28.1
 # dependencias implícitas que conviene fijar
 typing-extensions>=4.8.0
 starlette>=0.37.0
+gspread
+google-auth
