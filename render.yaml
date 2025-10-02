@@ -5,7 +5,7 @@ services:
     plan: free
     rootDir: app                 # 👈 raíz del repo
     buildCommand: pip install -r ../requirements.txt
-    startCommand: uvicorn app.main:app --host=0.0.0.0 --port=10000
+    startCommand: uvicorn main:app --host=0.0.0.0 --port=10000
     envVars:
       - key: OPENAI_API_KEY
         sync: false
@@ -17,7 +17,7 @@ services:
     name: ai-risk-ui
     env: python
     plan: free
-    rootDir: ui                 # 👈 carpeta frontend
+    rootDir: ui
     buildCommand: pip install -r ../requirements.txt
     startCommand: streamlit run app.py --server.port 10001 --server.address=0.0.0.0
     envVars:
