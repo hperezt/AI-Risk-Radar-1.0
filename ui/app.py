@@ -1,3 +1,4 @@
+#streamlit App productive
 import streamlit as st
 import requests
 import pandas as pd
@@ -8,7 +9,7 @@ LANGUAGES = {"Español": "es", "English": "en", "Deutsch": "de"}
 lang = st.sidebar.selectbox("🌐 Idioma / Language / Sprache", list(LANGUAGES.keys()))
 lang_code = LANGUAGES[lang]
 
-API_URL = "https://ai-risk-radar-api.onrender.com/analyze"
+API_URL = "https://ai-risk-radar-api.onrender.com"
 
 # ⚙️ Config app
 st.set_page_config(page_title="AI Risk Radar", layout="centered")

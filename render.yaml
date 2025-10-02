@@ -3,9 +3,9 @@ services:
     name: ai-risk-api
     env: python
     plan: free
-    rootDir: app
+    rootDir: .
     buildCommand: pip install -r ../requirements.txt
-    startCommand: uvicorn main:app --host=0.0.0.0 --port=10000
+    startCommand: uvicorn app.main:app --host=0.0.0.0 --port=10000
     envVars:
       - key: OPENAI_API_KEY
         sync: false
