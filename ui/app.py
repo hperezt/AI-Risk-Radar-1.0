@@ -37,7 +37,10 @@ GCP_CREDS = os.environ.get("GCP_CREDS")
 
 if GCP_CREDS and SHEET_ID:
     try:
-        creds = service_account.Credentials.from_service_account_info(json.loads(GCP_CREDS))
+        scopes = ["https://www.googleapis.com/auth/spreadsheets"]
+        data = json.loads(GCP_CREDS)
+        data["private_key"] = data["private_key"].replace("\\n", "\n")  # asegurar saltos de línea
+        creds = service_account.Credentials.from_service_account_info(data, scopes=scopes)
         client = gspread.authorize(creds)
         sheet = client.open_by_key(SHEET_ID).sheet1
     except Exception as e:
