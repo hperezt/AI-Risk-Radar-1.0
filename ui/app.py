@@ -27,7 +27,7 @@ lang_code = LANGUAGES[lang]
 # 🔗 Configuración de API
 # ==========================
 BASE_URL = os.environ.get("API_URL", "https://ai-risk-radar-1-0-bwdu.onrender.com/")
-API_URL = f"{BASE_URL}/analyze"
+API_URL = f"{BASE_URL.rstrip('/')}/analyze"
 
 # ==========================
 # 📂 Configuración de Google Sheets
