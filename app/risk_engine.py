@@ -2,7 +2,13 @@
 import os
 import json
 from dotenv import load_dotenv
-import openai
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Compatibilidad SDK OpenAI:
+#   - SDK nuevo (>=1.x): from openai import OpenAI; client.chat.completions.create(...)
+#   - SDK viejo (0.27.x): import openai; openai.ChatCompletion.create(...)
+#  Este módulo detecta el entorno y usa la llamada correcta automáticamente.
+# ─────────────────────────────────────────────────────────────────────────────
 
 load_dotenv()
 
@@ -13,7 +19,60 @@ USE_MOCK = False
 if not API_KEY:
     raise RuntimeError("OPENAI_API_KEY no está definida. Añádela en Render > Environment")
 
-openai.api_key = API_KEY  # SDK v1: asignación directa
+# Detecta SDK
+USE_NEW_SDK = False
+_openai_version = None
+
+try:
+    # Intentar SDK nuevo
+    from openai import OpenAI
+    client = OpenAI(api_key=API_KEY)
+    USE_NEW_SDK = True
+    try:
+        # no siempre está disponible __version__ aquí
+        import openai as _openai_mod  # solo para leer versión si existe
+        _openai_version = getattr(_openai_mod, "__version__", "unknown")
+    except Exception:
+        _openai_version = "unknown"
+except Exception:
+    # Fallback a SDK viejo
+    import openai as _openai_old
+    _openai_old.api_key = API_KEY
+    _openai_version = getattr(_openai_old, "__version__", "0.27.x")
+
+print(f"[risk_engine] OpenAI SDK detected: {'new>=1.x' if USE_NEW_SDK else 'legacy 0.27.x'} · version={_openai_version}")
+
+
+def _chat_completion(messages, temperature=0.3, max_tokens=3000, response_format_json=True):
+    """
+    Abstracción de llamada al chat para soportar ambos SDKs.
+    Retorna (content_str).
+    """
+    if USE_NEW_SDK:
+        # SDK nuevo (>=1.x)
+        kwargs = {
+            "model": MODEL_NAME,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+        # response_format solo existe en SDK nuevo
+        if response_format_json:
+            kwargs["response_format"] = {"type": "json_object"}
+
+        resp = client.chat.completions.create(**kwargs)
+        return resp.choices[0].message.content
+    else:
+        # SDK viejo (0.27.x) — NO soporta response_format
+        # Nos apoyamos en el prompt para forzar JSON estricto.
+        resp = _openai_old.ChatCompletion.create(
+            model=MODEL_NAME,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+        return resp["choices"][0]["message"]["content"]
+
 
 def generate_risks(text: str, context: str = "", lang: str = "es") -> dict:
     if USE_MOCK:
@@ -67,6 +126,13 @@ def generate_risks(text: str, context: str = "", lang: str = "es") -> dict:
         "es": 'Cada entrada: "risk", "justification", "countermeasure", "page", "evidence".',
     }[lang]
 
+    # Forzar JSON estricto también en SDK viejo (sin response_format)
+    JSON_ONLY = (
+        'Return ONLY a valid JSON object with exactly two lists: '
+        '"intuitive_risks" (5 objects) and "counterintuitive_risks" (5 objects). '
+        'No prose, no markdown, no comments — JSON only.'
+    )
+
     user_prompt = f"""{GUARD}
 
 {TASK}
@@ -78,29 +144,26 @@ Kontext / Contexto / Context:
 Dokument (gekürzt / truncado a 18000 Zeichen):
 {text[:18000]}
 
-Return ONLY a valid JSON object with exactly:
-- "intuitive_risks": 5 objects
-- "counterintuitive_risks": 5 objects
+{JSON_ONLY}
 """.strip()
 
-    response = openai.chat.completions.create(
-        model=MODEL_NAME,
+    # ── Llamada unificada al modelo ───────────────────────────────────────────
+    content = _chat_completion(
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user",   "content": user_prompt},
         ],
         temperature=0.3,
         max_tokens=3000,
-        response_format={"type": "json_object"}
+        response_format_json=True,  # en SDK viejo se ignora y usamos el prompt duro
     )
 
-    content = response.choices[0].message.content
+    # ── Parseo y validación JSON ──────────────────────────────────────────────
     try:
         data = json.loads(content)
     except Exception as e:
         raise RuntimeError(f"No se pudo parsear la respuesta como JSON. Raw: {content[:400]}... Error: {e}")
 
-    # Validación de estructura
     if not isinstance(data.get("intuitive_risks"), list) or not isinstance(data.get("counterintuitive_risks"), list):
         raise ValueError("El modelo no devolvió el JSON esperado.")
 
