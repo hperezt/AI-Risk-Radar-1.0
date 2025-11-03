@@ -3,6 +3,7 @@ import os
 import json
 from dotenv import load_dotenv
 import openai  
+
 print("DEBUG · openai version:", openai.__version__)
 load_dotenv()
 
@@ -50,8 +51,14 @@ def generate_risks(text: str, context: str = "", lang: str = "es") -> dict:
     if not MODEL_NAME:
         raise RuntimeError("MODEL_NAME no está definida")
 
+    # ✅ Mapa de idiomas
+    LANG_MAP = {"es": "Español", "en": "Inglés", "de": "Alemán"}
+    lang_name = LANG_MAP.get(lang, "Español")
+
+    # ✅ Prompt actualizado con instrucción clara de idioma
     user_prompt = f"""
-Idioma de salida: {lang}
+Instrucción importante: responde exclusivamente en {lang_name}.
+No uses ningún otro idioma ni términos traducidos parcialmente.
 
 Analiza el documento de un proyecto de infraestructura y genera:
 - 5 riesgos intuitivos
@@ -75,6 +82,7 @@ Devuelve solo un JSON válido con estas claves:
 - "counterintuitive_risks": lista de 5 objetos
 """
 
+    # ✅ Llamada al modelo
     response = openai.chat.completions.create(
         model=MODEL_NAME,
         messages=[
@@ -86,6 +94,7 @@ Devuelve solo un JSON válido con estas claves:
         response_format={"type": "json_object"}
     )
 
+    # ✅ Validación y parsing
     try:
         data = json.loads(response.choices[0].message.content)
     except Exception as e:
@@ -94,7 +103,6 @@ Devuelve solo un JSON válido con estas claves:
     if not isinstance(data.get("intuitive_risks"), list) or not isinstance(data.get("counterintuitive_risks"), list):
         raise ValueError("El modelo no devolvió el JSON esperado.")
 
-    # Validación rápida por estructura mínima
     for block in data["intuitive_risks"] + data["counterintuitive_risks"]:
         if not all(k in block for k in ["risk", "justification", "countermeasure", "page", "evidence"]):
             raise ValueError("Falta una de las claves requeridas en un riesgo")
