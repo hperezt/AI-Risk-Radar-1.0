@@ -59,13 +59,18 @@ async def analyze_document(
                 status_code=422,
             )
 
-        # Generar riesgos con GPT
-        result = generate_risks(joined_text, context=context, lang=lang)
+        # 🔹 Normaliza y registra el idioma
+        lang_norm = (lang or "es").strip().lower()
+        logger.info(f"[/analyze] incoming lang={lang!r} -> norm={lang_norm}")
 
-        # Añadir metadatos internos para debugging
+        # Generar riesgos con GPT
+        result = generate_risks(joined_text, context=context, lang=lang_norm)
+
+        # Añadir metadatos internos para debugging (visible en la UI si lo muestras)
         result["_debug"] = {
             "filename": filename,
             "chars": len(joined_text),
+            "lang": lang_norm,
         }
 
         return JSONResponse(content=result)
@@ -80,3 +85,4 @@ async def analyze_document(
             },
             status_code=500,
         )
+
