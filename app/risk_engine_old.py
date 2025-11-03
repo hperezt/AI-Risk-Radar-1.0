@@ -51,50 +51,73 @@ def generate_risks(text: str, context: str = "", lang: str = "es") -> dict:
     if not MODEL_NAME:
         raise RuntimeError("MODEL_NAME no está definida")
 
-    # ✅ Mapa de idiomas
-    LANG_MAP = {"es": "Español", "en": "Inglés", "de": "Alemán"}
-    lang_name = LANG_MAP.get(lang, "Español")
+    # === Sprach-Mapping (Anzeigetext für das Modell) ===
+    LANG_MAP = {"de": "Deutsch", "en": "Englisch", "es": "Spanisch"}
+    lang_name = LANG_MAP.get(lang, "Deutsch")
 
-    # ✅ Prompt actualizado con instrucción clara de idioma
+    # === System-Prompt in Zielsprache ===
+    SYSTEM_BY_LANG = {
+        "de": (
+            "Du bist ein interdisziplinäres Fachgremium (Bauingenieurwesen, Vergabe-/Infrastrukturrecht, "
+            "Risikomanagement im deutschen Schienenverkehr). Antworte ausnahmslos in Deutsch. "
+            "JSON-Schlüssel bleiben englisch (risk, justification, countermeasure, page, evidence). "
+            "Zitate aus dem Dokument (evidence) nicht übersetzen."
+        ),
+        "en": (
+            "You are an interdisciplinary expert panel (rail civil engineering, procurement/infrastructure law, "
+            "risk management in German rail). Respond exclusively in English. "
+            "JSON keys must remain in English (risk, justification, countermeasure, page, evidence). "
+            "Do not translate document quotes (evidence)."
+        ),
+        "es": (
+            "Eres un panel interdisciplinar (ingeniería ferroviaria, derecho de infraestructura, "
+            "gestión de riesgos en ferrocarriles). Responde exclusivamente en Español. "
+            "Las claves JSON deben quedar en inglés (risk, justification, countermeasure, page, evidence). "
+            "No traduzcas citas del documento (evidence)."
+        ),
+    }
+    system_prompt = SYSTEM_BY_LANG.get(lang, SYSTEM_BY_LANG["de"])
+
+    # === User-Prompt mit harter Sprachvorgabe ===
     user_prompt = f"""
-Instrucción importante: responde exclusivamente en {lang_name}.
-No uses ningún otro idioma ni términos traducidos parcialmente.
+Instrucción crítica / Wichtige Vorgabe / Critical instruction:
+Antworte ausschließlich in {lang_name}. Keine Mischsprache. 
+JSON-Keys bleiben englisch. Inhalte in {lang_name}. Zitate (evidence) unverändert lassen.
 
-Analiza el documento de un proyecto de infraestructura y genera:
-- 5 riesgos intuitivos
-- 5 riesgos contraintuitivos
+Aufgabe:
+Analysiere das folgende Projektdokument (Schieneninfrastruktur) und liefere:
+- 5 intuitive Risiken
+- 5 kontraintuitive Risiken
 
-Para cada riesgo, devuelve un JSON con las siguientes claves:
+Struktur jedes Eintrags:
 - "risk"
 - "justification"
 - "countermeasure"
-- "page"
-- "evidence"
+- "page" (falls unbekannt: schätzen oder leer lassen)
+- "evidence" (originales Textzitat aus dem Dokument)
 
-Contexto adicional (si aplica):
+Zusätzlicher Kontext (optional):
 {context}
 
-Documento (truncado a 18000 caracteres):
+Dokument (abgeschnitten auf 18000 Zeichen):
 {text[:18000]}
 
-Devuelve solo un JSON válido con estas claves:
-- "intuitive_risks": lista de 5 objetos
-- "counterintuitive_risks": lista de 5 objetos
-"""
+Gib ausschließlich einen gültigen JSON-Objekt-Output mit genau diesen beiden Listen zurück:
+- "intuitive_risks": Liste mit 5 Objekten
+- "counterintuitive_risks": Liste mit 5 Objekten
+""".strip()
 
-    # ✅ Llamada al modelo
     response = openai.chat.completions.create(
         model=MODEL_NAME,
         messages=[
-            {"role": "system", "content": SYSTEM},
-            {"role": "user", "content": user_prompt},
+            {"role": "system", "content": system_prompt},
+            {"role": "user",   "content": user_prompt},
         ],
         temperature=0.3,
         max_tokens=3000,
         response_format={"type": "json_object"}
     )
 
-    # ✅ Validación y parsing
     try:
         data = json.loads(response.choices[0].message.content)
     except Exception as e:
@@ -109,3 +132,4 @@ Devuelve solo un JSON válido con estas claves:
 
     data["source"] = "openai"
     return data
+
